@@ -3,22 +3,37 @@
 
 --[[Notes:
 	- This is callable from any script where the wrappers export it
-	- TODO: Maybe replace genfunc.lua with more smaller separated files? <-yes
+	- TODO: Maybe replace genfunc.lua with more smaller separated files? <-yes (genericScriptWrprs table, lists wrapper files)
 	--]]
 
 
 
--- Uses internal names taken from danmakufu.
+-- Localized love modules
+
+local lfs = love.filesystem
+
+
+
+-- Modules
+
+local log = require 'source.log'
+
+
+
+-- Locals
+
 local allowedScriptTypes = require "source.scripttypes"
 local genericScriptWrprs = require "source.genwrappers"
 
 
 
+-- This module
+
 return function(scriptType, scriptPath)
 
 	local script, wrap
 
-	-- global sandbox for the to-be loaded script
+	-- Global sandbox for the to-be loaded script.
 	local environment = {}
 
 	-- Separate the given path to directories and filename.
@@ -30,7 +45,7 @@ return function(scriptType, scriptPath)
 		n, e = 'script', 'lua'
 
 	elseif scriptPath:match('[/][%.]') then
-		-- weirdest case, no filename, only extension; Try a generic filename.
+		-- Weirdest case, no filename, only extension; Try a generic filename.
 		n = 'script'
 
 	elseif n == nil and e and e:len()>0 then
@@ -45,32 +60,38 @@ return function(scriptType, scriptPath)
 
 	scriptPath = tostring(p) .. tostring(n) .. '.' .. tostring(e)
 
-	if not love.filesystem.isFile(scriptPath) then
-		error("Error: loadscript: Script '" .. scriptPath .. "' doesn't exist!")
+	if not lfs.isFile(scriptPath) then
+		local s = string.format("Error: loadscript: Script '%s' doesn't exist!", scriptPath)
+		log('sys',s); error(s)
 	end
 
 	if allowedScriptTypes[scriptType] then
 
-		script = love.filesystem.load(scriptPath)
+		script = lfs.load(scriptPath)
 
 		-- Generic script wrappers
-		wrap = love.filesystem.load('source/wrappers/genfunc.lua')()
-		wrap(environment, false)
+		for i,v in ipairs(genericScriptWrprs) do
+			wrap = lfs.load('source/wrappers/' .. v .. '.lua')()
+			wrap(environment)
+		end
 
 		-- Script type dependent wrappers
-		wrap = love.filesystem.load('source/wrappers/' .. scriptType .. '.lua')()
-		wrap(environment, false)
+		wrap = lfs.load('source/wrappers/' .. scriptType .. '.lua')()
+		wrap(environment)
 
 	else
-		error("Error: loadscript: Script type '" .. scriptType .. "' isn't supported!")
+		local s = string.format("Error: loadscript: Script type '%s' isn't supported!", scriptType)
+		log('sys',s); error(s)
 	end
 
+	-- Deep magic happens here...
 	setfenv(script, environment)
 	script = script()
 	setmetatable(script, {__index = environment})
 	
 	if not type(script) == 'table' then
-		error("Error: loadscript: Script '" .. scriptPath .. "' didn't return a table!")
+		local s = string.format("Error: loadscript: Script '" .. scriptPath .. "' didn't return a table!", scriptPath)
+		log('sys',s); error(s)
 	end
 
 	-- Set the script's source directory...
