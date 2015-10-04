@@ -1,9 +1,5 @@
--- Framework initializing code
+-- Engine initializing code
 -- by zorg @ 2015 license: ISC
-
---[[Code Flow:
-	main.lua:love.load -> this -> main.lua:love.load
-	--]]
 
 --[[Notes:
 	- Checks commandline arguments
@@ -15,10 +11,10 @@
 
 
 
--- Framework version (3rd iteration)
+-- Engine version (3rd iteration)
 -- The ONLY global in this whole framework
--- 0th major version (prerelease) | 1st minor version (not yet versioned) | 4th patch
-_LDME_version = "0.1.0"
+-- 0th major version (prerelease) | 1st minor version (not yet versioned) | 5th patch
+_LDME_version = "0.1.5"
 
 
 
@@ -38,7 +34,7 @@ local log = require 'source.log'
 -- Locals
 
 local initPackage
-
+local allowedScriptTypes = require 'source.scripttypes'
 
 
 -- This module
@@ -55,9 +51,6 @@ init = function(arg)
 	local cmdline = {('\t'..tostring(arg))}
 	for i=-2,#arg do cmdline[#cmdline+1] = '\t' .. string.format('%+2d: ',i) .. tostring(arg[i]) end
 	log('sys','Commandline Arguments: \n%s',table.concat(cmdline,' \n') .. '\n')
-
-	-- Uses internal names taken from danmakufu.
-	local allowedScriptTypes = {["character"] = true, ["single"] = true, ["plural"] = true, ["stage"] = true, ["package"] = true}
 
 	if arg[2] and arg[3] and allowedScriptTypes[arg[2]] then
 		if arg[2] == "package" then
@@ -90,7 +83,10 @@ initPackage = function(packagePath)
 	if lfs.isFile(packagePath) then
 		if packagePath:sub(-3) == 'zip' then
 			local ok = lfs.mount(packagePath, 'package')
-			if not ok then error(string.format("Error: init.lua: Couldn't mount file '%s'. Make sure it is a zip archive!",packagePath)) end
+			if not ok then
+				local s = string.format("Error: init.lua: Couldn't mount file '%s'. Make sure it is a zip archive!", packagePath)
+				log('sys',s); error(s)
+			end
 			packagePath = 'package/init.lua'
 		end
 	end
@@ -108,13 +104,19 @@ initPackage = function(packagePath)
 	if lfs.isFile(packagePath) then
 
 		local ok = lfs.load(packagePath)
-		if not ok then error(string.format("Error: init.lua: Couldn't load file '%s'.",packagePath)) end
+		if not ok then
+			local s = string.format("Error: init.lua: Couldn't load file '%s'.", packagePath)
+			log('sys',s); error(s)
+		end
 
 		-- Call the package's init script; we expect these vars to be returned.
 		local width, height, flags, title, entrypoint = ok()
 
 		ok = lw.setMode(width, height, flags)
-		if not ok then error("Error: init.lua: Couldn't set default video mode; please check '" .. packagePath .. "' for problems.") end
+		if not ok then
+			local s = string.format("Error: init.lua: Couldn't set default video mode; please check '%s' for problems.", packagePath)
+			log('sys',s); error(s) 
+		end
 
 		if title and type(title) == 'string' then
 			lw.setTitle(title)
@@ -123,7 +125,8 @@ initPackage = function(packagePath)
 		-- Only allow access to files inside the package's own directory
 		return 'package', p .. entrypoint
 	else
-		error(string.format("Error: init.lua: File '%s' doesn't exist!", packagePath))
+		local s = string.format("Error: init.lua: File '%s' doesn't exist!", packagePath)
+		log('sys',s); error(s)
 	end
 end
 
