@@ -1,16 +1,12 @@
--- Framework main entrypoint
+-- Engine main entrypoint
 -- by zorg @ 2015 license: ISC
-
---[[Code Flow:
-	this -> _G:love.run -> this:love.load
-	this:love.load -> mainmenu.lua (if no script or package is given as a cmdline arg, or if it needs to fall back)
-	--]]
 
 --[[Notes:
 	- this main will be a skeleton, like always
-	- it should pass itself to the default menu state/structure unless a game is passed to it as a parameter
-	- have the engine invoke the scripts, cascading through includes, using an elaborate gamestate system...
-	- all available funcs in scripts will be setfenv'd into them; stateful ones will be external modules (singletons though)
+	- it should go to the default menu state/structure unless a game or script is passed to it as a parameter
+	- have the engine invoke the scripts, cascading through includes, using an "elaborate" gamestate system...
+	- all available scripts will be setfenv'd into a shared sandbox;
+	- external modules (singletons) will be passed along into that sandbox
 	--]]
 
 
@@ -20,20 +16,34 @@ love.run = love.filesystem.load('source/gameloop.lua')()
 
 
 
--- Modules
-
+-- For testing purposes mostly
 --require 'source.lib.strict'
 
-local gs
 
-local atlas
-local audio
-local collision
-local input
-local layers
-local loadscript
-local log
-local ungerm -- debug, that is.
+
+-- Modules
+
+-- System modules, as in, what is needed by the core to work.
+local gamestates -- HUMP's (stack)
+local loadscript -- only used by the core
+local log        -- useful
+local ungerm     -- debug, that is.
+
+-- Concern modules, as in, you should use these, if you don't want to hack the engine (but feel free to :3)
+--local atlas
+local audio      -- extended audio capabilities
+local camera     -- very robust
+--local collision
+local input      -- supports 4-valued and virtual states, among other things
+local layers     -- canvas handling
+
+-- Gameish modules, as in you may use these if you want, but they're not mandatory for scripts
+--local projectile
+--local laser
+--local entity
+
+-- Note: The above two kinds are not actually used in the core, but we preload them so they won't be required
+--       whenever from a probably time-sensitive script.
 
 
 
@@ -41,13 +51,18 @@ local ungerm -- debug, that is.
 
 love.load = function(arg)
 
-	-- Init the logging system, and add a default engine id.
+	-- HAX: get the identity from the config file, in case someone actually uses the engine to create a standalone game...
+	--local identity = {['modules'] = {}}; love.conf(identity); identity = identity.identity;
+	-- ...or just use the wiki; don't code when you're tired as jigoku zenbun.
+	local identity = love.filesystem.getIdentity()
+
+	-- Init the logging system, and add a default id for system stuff.
 	log = require 'source.log'
 	log.init()
-	log.newLog(false, 'logs/log.txt', 'LDME', 'sys', true)
+	log.newLog(false, 'logs/log.txt', identity, 'sys', true) -- append, filepath, identity, name, console
 
 	-- Holds returned script type and the entrypoint's path.
-	local scriptType, scriptPath, script
+	local scriptType, scriptPath
 
 	-- Initialize the engine
 	local init = love.filesystem.load('source/init.lua')()
@@ -67,13 +82,15 @@ love.load = function(arg)
 	ungerm.init()
 
 	-- Load the script, and start it!
-	script = loadscript(scriptType, scriptPath)
-	gs.push(script)
+	local script = loadscript(scriptType, scriptPath)
+	gamestates.push(script)
 
 end
 
 
 
+-- Pass input data to our input module
+-- TODO: extend this with controller support as well, and maybe mouse too, though idk how often that's used in a bullet hell shooter...
 love.keypressed = function(key,isrepeat)
 	input.keypressed(key,isrepeat)
 end
@@ -82,13 +99,14 @@ love.keyreleased = function(key)
 	input.keyreleased(key)
 end
 
+
+
 -- The raw game loop cycles, not tick/frame-limited.
 love.atomic = function(da)
 	audio.update(da)
 end
 
-
-
+-- Tickrate-limited loop
 love.update = function(dt, tick)
 
 	local current = gs.current()
