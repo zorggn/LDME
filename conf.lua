@@ -1,10 +1,10 @@
 function love.conf(t)
 
-    -- The name of the framework's own save directory (string)
-    -- Packages may overwrite this in their own init functions, if they wish to be a "standalone" game.
+    -- The name of the engine's own save directory (string)
+    -- Packages may overwrite this in their own init functions, if they wish to be a "standalone" release.
     t.identity = "LDME"
 
-    -- The LÖVE version this game was made for (string)
+    -- The LÖVE version this was made for (string)
     -- TODO: Update it when löve 0.10 comes out.
     t.version = "0.9.2"                
 
