@@ -46,11 +46,11 @@ t.init = function()
 end
 
 t.newLog = function(append, filepath, identity, name, console)
-	assert(type(append) == 'boolean', "Error: Log: newLog: Invalid append parameter '" .. tostring(append) .. "' given!")
-	assert(type(filepath) == 'string', "Error: Log: newLog: Invalid filepath parameter '" .. tostring(filepath) .. "' given!")
-	assert((type(identity) == 'string' or (identity == nil)), "Error: Log: newLog: Invalid identity parameter '" .. tostring(identity) .. "' given!")
-	assert((type(name) == 'string' or (name == nil)), "Error: Log: newLog: Invalid name parameter '" .. tostring(name) .. "' given!")
-	assert((type(console) == 'boolean' or (console == nil)), "Error: Log: newLog: Invalid console parameter '" .. tostring(console) .. "' given!")
+	assert(type(append) == 'boolean', "Error: Log: newLog: Invalid 1st (append) parameter '" .. tostring(append) .. "' given!")
+	assert(type(filepath) == 'string', "Error: Log: newLog: Invalid 2nd (filepath) parameter '" .. tostring(filepath) .. "' given!")
+	assert((type(identity) == 'string' or (identity == nil)), "Error: Log: newLog: Invalid 3rd (identity) parameter '" .. tostring(identity) .. "' given!")
+	assert((type(name) == 'string' or (name == nil)), "Error: Log: newLog: Invalid 4th (name) parameter '" .. tostring(name) .. "' given!")
+	assert((type(console) == 'boolean' or (console == nil)), "Error: Log: newLog: Invalid 5th (console) parameter '" .. tostring(console) .. "' given!")
 
 	local s = string.format('%s%s%s%s',append,filepath,identity,name)
 
@@ -95,6 +95,7 @@ local getLogId = function(name)
 end
 
 t.setConsoleLogging = function(id, val)
+	assert((type(val) == 'boolean'), "Error: Log: setConsoleLogging: Invalid 2nd (val) parameter '" .. tostring(val) .. "' given!")
 
 	-- The id can be the name as well.
 	if type(id) == 'string' then
