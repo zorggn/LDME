@@ -1,11 +1,6 @@
 -- Framework audio library
 -- by zorg @ 2015 license: ISC
 
---[[Code Flow:
-	require -> this
-	main.lua:love.update -> this:update
-	--]]
-
 --[[Notes:
 	- Implements a superset of danmakufu's (either version's) audio functionality, meanwhile exposing only a subset of love's.
 	- Functions separated between background music and sound effect related ones, along with four generic ones
@@ -22,8 +17,8 @@ local ls = love.sound
 
 -- Locals
 
-local list = {}											-- the list of objects one has created; sequential keys; table values.
-local active = {}										-- the list of active sources; keys are sound objects in the above list; false or id values.
+local list   = {}            -- the list of objects one has created; sequential keys; table values.
+local active = {}            -- the list of active sources; keys are sound objects in the above list; false or id values.
 
 
 
