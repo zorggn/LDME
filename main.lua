@@ -24,18 +24,18 @@ love.run = love.filesystem.load('source/gameloop.lua')()
 -- Modules
 
 -- System modules, as in, what is needed by the core to work.
-local gamestates -- HUMP's (stack)
-local loadscript -- only used by the core
-local log        -- useful
-local ungerm     -- debug, that is.
+local gamestates   -- HUMP's (stack)
+local loadscript   -- only used by the core
+local log          -- useful
+local debugoverlay -- debug, that is.
 
 -- Concern modules, as in, you should use these, if you don't want to hack the engine (but feel free to :3)
 --local atlas
-local audio      -- extended audio capabilities
-local camera     -- very robust
+local audio        -- extended audio capabilities
+local camera       -- very robust
 --local collision
-local input      -- supports 4-valued and virtual states, among other things
-local layers     -- canvas handling
+local input        -- supports 4-valued and virtual states, among other things
+local layers       -- canvas handling
 
 -- Gameish modules, as in you may use these if you want, but they're not mandatory for scripts
 --local projectile
