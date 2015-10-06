@@ -1,12 +1,9 @@
--- Framework debug library
+-- Framework internals overlay
 -- by zorg @ 2015 license: ISC
-
---[[Code Flow:
-	require -> this
-	--]]
 
 --[[Notes:
 	- For a lack of a better alternative to debug...
+	- TODO: 0.10 will break some stuff here; when the time comes, update this file.
 	--]]
 
 -- Localized love modules
@@ -17,23 +14,21 @@ local lg = love.graphics
 
 local font
 
-
-
 -- This module
 
 local t = {}
 
-
-
 -- Callbacks
 
-t.render = function(df)
+t.render = function(ip)
 
+	-- Locals for all the data we can get from löve
 	local width, height, hw, fh, aps, apsw, tps, tpsw, fps, fpsw, lag, lagw, l
 	local stats, dcs, dcw, csws, csww, txms, txmw, imgs, imgw, cnvs, cnvw, fnts, fntw, txm, txp
 
 	stats = love.graphics.getStats()
 
+	-- Correct for magnitude
 	if stats.texturememory < 1024 then
 		txm = stats.texturememory
 		txp = 'B'
@@ -48,6 +43,7 @@ t.render = function(df)
 		txp = 'GB'
 	end
 
+	-- For displaying all this
 	width, height = lg.getDimensions()
 	hw = width  /  2
 	fh = height - 24
@@ -59,8 +55,10 @@ t.render = function(df)
 	lg.setColor(255,255,255,255)
 	lg.setBlendMode('alpha')
 
-	l = (1-df)*100
+	-- Lag percentage
+	l = (1-ip)*100
 
+	-- Pre-format the strings
 	aps  = string.format("%3.2f a/s", 1/love.timer.getDelta())
 	apsw = font:getWidth("000000.00 aps")
 	tps  = string.format("%3.2f t/s",   love.timer.getTPS())
@@ -69,8 +67,8 @@ t.render = function(df)
 	fpsw = font:getWidth("00.00 fps___")
 	lag  = string.format("%3.0f%% dt/t", l)
 
-	dcs = string.format("d(): %4d", stats.drawcalls)
-	dcw = font:getWidth("d(): 0000")
+	dcs  = string.format("d(): %4d", stats.drawcalls)
+	dcw  = font:getWidth("d(): 0000")
 	csws = string.format("c<>: %4d", stats.canvasswitches)
 	csww = font:getWidth("c<>: 0000")
 	txms = string.format("tex: %10f " .. txp, txm)
@@ -82,6 +80,7 @@ t.render = function(df)
 	fnts = string.format("fnt: %4d", stats.fonts)
 	fntw = font:getWidth("fnt: 0000")
 
+	-- Print the preformatted strings
 	lg.printf(aps, 0, fh, width-fpsw-tpsw-apsw, 'right')
 	lg.printf(tps, 0, fh, width-fpsw-tpsw,      'right')
 	lg.printf(fps, 0, fh, width-fpsw,           'right')
@@ -99,15 +98,11 @@ t.render = function(df)
 
 end
 
-
-
 -- Methods
 
 t.init = function()
 	font = love.graphics.newFont('assets/THSpatial.ttf',24)
 end
-
-
 
 ----------
 
