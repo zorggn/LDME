@@ -21,28 +21,24 @@ love.run = love.filesystem.load('source/gameloop.lua')()
 
 
 
--- Modules
+-- Locals
 
--- System modules, as in, what is needed by the core to work.
-local gamestates   -- HUMP's (stack)
-local loadscript   -- only used by the core
-local log          -- useful
+-- These are actually used in this file
+local gamestates                -- script stack
+local log                       -- very handy
 
--- Concern modules, as in, you should use these, if you don't want to hack the engine (but feel free to :3)
---local atlas
-local audio        -- extended audio capabilities
-local camera       -- very robust
---local collision
-local input        -- supports 4-valued and virtual states, among other things
-local layers       -- canvas handling
+local audio
+local input
 
--- Gameish modules, as in you may use these if you want, but they're not mandatory for scripts
---local projectile
---local laser
---local entity
+-- The strings are the modules' path pattern from the source folder.
+local moduleList = {
+	"audio",                     -- extended audio capabilities
+	"camera",                    -- robust 2D implementation, extendable
+	"input",                     -- supports 4-valued and virtual states, among other things
+	"layers",                    -- z-ordering via canvases
+}
 
--- Note: The above two kinds are not actually used in the core, but we preload them so they won't be required
---       whenever from a probably time-sensitive script.
+--local atlas --local collision --local projectile --local laser --local entity
 
 
 
@@ -50,62 +46,37 @@ local layers       -- canvas handling
 
 love.load = function(arg)
 
-	-- HAX: get the identity from the config file, in case someone actually uses the engine to create a standalone game...
-	--local identity = {['modules'] = {}}; love.conf(identity); identity = identity.identity;
-	-- ...or just use the wiki; don't code when you're tired as jigoku zenbun.
+	-- Get the identity from the config file, in case someone actually uses the engine to create a standalone game...
 	local identity = love.filesystem.getIdentity()
 
 	-- Init the logging system, and add a default id for system stuff.
-	log = require 'source.log'
-	log.init()
+	log = require 'source.log'; log.init()
 	log.newLog(false, 'logs/log.txt', identity, 'sys', true) -- append, filepath, identity, name, console
 
-	-- Holds returned script type and the entrypoint's path.
-	local scriptType, scriptPath
+	-- Require in the modules, and initialize them
+	for i,v in ipairs(moduleList) do
+		local module = require('source.' .. v)
+		if module.init then module.init() end
 
-	-- Initialize the engine
+		-- temporary hack for the two that we do use for faster access
+		if v == 'audio' then audio = module end
+		if v == 'input' then input = module end
+	end
+
+	-- Initialize the framework; returns whether it should execute the main menu, a script, or a full game;
+	-- variables hold returned script type and the entrypoint's path.
 	local init = love.filesystem.load('source/init.lua')()
+	local scriptType, scriptPath = init(arg)
 
-	-- Returns whether it should execute the main menu, a script, or a full game.
-	scriptType, scriptPath = init(arg)
-
-	-- Load in the necessary modules, now that we know we can run the engine.
-
-	-- System
-	gamestates = require 'source.lib.vrld.hump.gamestate'
-	loadscript = require 'source.loadscript'
-	-- logger already loaded
-
-	-- Concern
-	audio = require 'source.audio'
-	input = require 'source.input'
-	--layers = require 'source.layers'
-
-	-- Gameish
-	-- bullet = ...
-
-	-- Init modules that need to be.
-	
-
-	-- Load the script, and start it!
+	-- Load the script
+	local loadscript = love.filesystem.load('source/loadscript.lua')()
 	local script = loadscript(scriptType, scriptPath)
+
+	-- Load in the state system and start the script
+	gamestates = require "source.lib.vrld.hump.gamestate"
 	gamestates.push(script)
 
 end
-
-
-
--- Pass input data to our input module
--- TODO: extend this with controller support as well, and maybe mouse too, though idk how often that's used in a bullet hell shooter...
-love.keypressed = function(key,isrepeat)
-	input.keypressed(key,isrepeat)
-end
-
-love.keyreleased = function(key)
-	input.keyreleased(key)
-end
-
-
 
 -- The raw game loop cycles, not tick/frame-limited.
 love.atomic = function(da)
@@ -147,4 +118,18 @@ love.render = function(df)
 	local current = gamestates.current()
 	if current.render then current:render(df) end
 
+end
+
+
+
+-- Internal events
+
+-- Pass input data to our input module
+-- TODO: extend this with controller support as well, and maybe mouse too, though idk how often that's used in a bullet hell shooter...
+love.keypressed = function(key,isrepeat)
+	input.keypressed(key,isrepeat)
+end
+
+love.keyreleased = function(key)
+	input.keyreleased(key)
 end
