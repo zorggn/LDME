@@ -269,6 +269,12 @@ end
 
 
 
+script.render = function(self, df)
+	overlay.render(df)
+end
+
+
+
 ----------
 
 return script

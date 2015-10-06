@@ -36,7 +36,7 @@ script.init = function(self)
 	mainMenu    = loadPackageScript(path .. 'mainmenu.lua')
 	background  = loadPackageScript(path .. 'background.lua')
 
-	overlay     = loadModule('debugoverlay.lua')
+	overlay     = loadPackageScript(path .. 'debugoverlay.lua')
 
 	background:init(); background.init = nil
 	mainMenu:init();   mainMenu.init   = nil
@@ -72,7 +72,7 @@ script.draw = function(self, df)
 end
 
 script.render = function(self, df)
-	debugoverlay.render(df)
+	overlay.render(df)
 end
 
 return script
