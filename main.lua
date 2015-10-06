@@ -76,7 +76,7 @@ love.load = function(arg)
 	gamestates = require 'source.lib.vrld.hump.gamestate'
 	loadscript = require 'source.loadscript'
 	-- logger already loaded
-	ungerm = require 'source.ungerm'
+	debugoverlay = require 'source.debugoverlay'
 
 	-- Concern
 	audio = require 'source.audio'
@@ -87,7 +87,7 @@ love.load = function(arg)
 	-- bullet = ...
 
 	-- Init modules that need to be.
-	ungerm.init()
+	debugoverlay.init()
 
 	-- Load the script, and start it!
 	local script = loadscript(scriptType, scriptPath)
@@ -152,6 +152,6 @@ love.render = function(df)
 	-- Debug data, printed on top of everything
 	-- Note, we are cheating a bit here by not drawing to a canvas
 	-- -> TODO: do draw to the topmost canvas since we want the screen to be resizable, and like this, it isn't.
-	ungerm.render(df)
+	debugoverlay.render(df)
 
 end
