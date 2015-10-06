@@ -64,7 +64,7 @@ t.render = function(interpolation)
 	local drawCallsWidth       = font:getWidth("d(): 0000")
 	local canvasSwitches       = string.format("c<>: %4d", stats.canvasswitches)
 	local canvasSwitchesWidth  = font:getWidth("c<>: 0000")
-	local textureMemory        = string.format("tex: %10f %s", stats.texturememoryprefix, stats.texturememory)
+	local textureMemory        = string.format("tex: %10f %s", stats.texturememory, stats.texturememoryprefix)
 	local textureMemoryWidth   = font:getWidth("tex: 0000000000     " .. stats.texturememoryprefix)
 	local imageCount           = string.format("img: %4d", stats.images)
 	local imageCountWidth      = font:getWidth("img: 0000")
@@ -79,7 +79,7 @@ t.render = function(interpolation)
 	lg.printf(framesPerSecond, 0, fontHeight, width-framesPerSecondWidth,                                         'right')
 
 	if lag < 0 then lg.setColor(255,0,0,255) end
-	lg.printf(lag, 0, fontHeight, width, 'right')
+	lg.printf(lagPercent, 0, fontHeight, width, 'right')
 	lg.setColor(255,255,255,255)
 
 	lg.printf(drawCalls,      0, fontHeight-24, width-fontCountWidth-canvasCountWidth-imageCountWidth-textureMemoryWidth-canvasSwitchesWidth, 'right')
