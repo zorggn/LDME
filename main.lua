@@ -27,7 +27,6 @@ love.run = love.filesystem.load('source/gameloop.lua')()
 local gamestates   -- HUMP's (stack)
 local loadscript   -- only used by the core
 local log          -- useful
-local debugoverlay -- debug, that is.
 
 -- Concern modules, as in, you should use these, if you don't want to hack the engine (but feel free to :3)
 --local atlas
@@ -76,7 +75,6 @@ love.load = function(arg)
 	gamestates = require 'source.lib.vrld.hump.gamestate'
 	loadscript = require 'source.loadscript'
 	-- logger already loaded
-	debugoverlay = require 'source.debugoverlay'
 
 	-- Concern
 	audio = require 'source.audio'
@@ -87,7 +85,7 @@ love.load = function(arg)
 	-- bullet = ...
 
 	-- Init modules that need to be.
-	debugoverlay.init()
+	
 
 	-- Load the script, and start it!
 	local script = loadscript(scriptType, scriptPath)
@@ -148,10 +146,5 @@ love.render = function(df)
 
 	local current = gamestates.current()
 	if current.render then current:render(df) end
-
-	-- Debug data, printed on top of everything
-	-- Note, we are cheating a bit here by not drawing to a canvas
-	-- -> TODO: do draw to the topmost canvas since we want the screen to be resizable, and like this, it isn't.
-	debugoverlay.render(df)
 
 end

@@ -36,9 +36,13 @@ script.init = function(self)
 	mainMenu    = loadPackageScript(path .. 'mainmenu.lua')
 	background  = loadPackageScript(path .. 'background.lua')
 
+	overlay     = loadModule('debugoverlay.lua')
+
 	background:init(); background.init = nil
 	mainMenu:init();   mainMenu.init   = nil
 	scriptMenu:init(); scriptMenu.init = nil
+
+	overlay.init()
 
 	waitTime = 1.5
 	time = 0
@@ -65,6 +69,10 @@ end
 
 script.draw = function(self, df)
 	background:draw(df)
+end
+
+script.render = function(self, df)
+	debugoverlay.render(df)
 end
 
 return script
