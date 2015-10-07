@@ -13,13 +13,25 @@ local lg = love.graphics
 -- Locals
 
 local font
+local offset = 4
+local watchedVariables = {}
+local variableOrder = {}
 
-local correctMagnitude = function(amount)
-	if     amount <       1024 then return amount             , 'B'
-	elseif amount <    1048576 then return amount /       1024, 'kB'
-	elseif amount < 1073741824 then return amount /    1048576, 'MB'
-	else                            return amount / 1073741824, 'GB'
-	end
+local renderVariable = function(name, x, y, interpolation)
+	local value = watchedVariables[name][1](interpolation)
+	local format = watchedVariables[name][2]
+	local formattedValue = string.format(format, value)
+
+	local textWidth = font:getWidth(formattedValue)
+	local textHeight = font:getHeight()
+
+	lg.push('all')
+	lg.setColor(0, 0, 0, 150)
+	lg.rectangle("fill", x, y, textWidth+offset*2, textHeight+offset*2)
+	lg.pop()
+
+	lg.printf(formattedValue, x + offset, y + offset, textWidth, "left")
+	return
 end
 
 -- This module
@@ -30,17 +42,6 @@ local t = {}
 
 t.render = function(interpolation)
 
-	-- Holds stats about Löve's current graphic resources.
-	stats = love.graphics.getStats()
-
-	-- Correct for magnitude (original lowercase style kept for consistency in this table)
-	stats.texturememory, stats.texturememoryprefix = correctMagnitude(stats.texturememory)
-
-	-- For positioning the data onto the screen.
-	local width, height = lg.getDimensions()
-	local halfWidth = width  /  2
-	local fontHeight = height - 24
-
 	lg.push('all')
 
 	lg.origin()
@@ -48,46 +49,9 @@ t.render = function(interpolation)
 	lg.setColor(255,255,255,255)
 	lg.setBlendMode('alpha')
 
-	-- Amount of desync between update ticks and draw frames.
-	local lag = (1 - interpolation) * 100
-
-	-- Pre-format the strings
-	local atomsPerSecond       = string.format("%3.2f a/s", 1/love.timer.getDelta())
-	local atomsPerSecondWidth  = font:getWidth("000000.00 aps")
-	local ticksPerSecond       = string.format("%3.2f t/s",   love.timer.getTPS())
-	local ticksPerSecondWidth  = font:getWidth("00.00 tps___")
-	local framesPerSecond      = string.format("%3.2f f/s",   love.timer.getFPS())
-	local framesPerSecondWidth = font:getWidth("00.00 fps___")
-	local lagPercentage           = string.format("%3.0f%% dt/t", lag)
-
-	local drawCalls            = string.format("d(): %4d", stats.drawcalls)
-	local drawCallsWidth       = font:getWidth("d(): 0000")
-	local canvasSwitches       = string.format("c<>: %4d", stats.canvasswitches)
-	local canvasSwitchesWidth  = font:getWidth("c<>: 0000")
-	local textureMemory        = string.format("tex: %10f %s", stats.texturememory, stats.texturememoryprefix)
-	local textureMemoryWidth   = font:getWidth("tex: 0000000000     " .. stats.texturememoryprefix)
-	local imageCount           = string.format("img: %4d", stats.images)
-	local imageCountWidth      = font:getWidth("img: 0000")
-	local canvasCount          = string.format("cnv: %4d", stats.canvases)
-	local canvasCountWidth     = font:getWidth("cnv: 0000")
-	local fontCount            = string.format("fnt: %4d", stats.fonts)
-	local fontCountWidth       = font:getWidth("fnt: 0000")
-
-	-- Print the preformatted strings
-	lg.printf(atomsPerSecond,  0, fontHeight, width-framesPerSecondWidth-ticksPerSecondWidth-atomsPerSecondWidth, 'right')
-	lg.printf(ticksPerSecond,  0, fontHeight, width-framesPerSecondWidth-ticksPerSecondWidth,                     'right')
-	lg.printf(framesPerSecond, 0, fontHeight, width-framesPerSecondWidth,                                         'right')
-
-	if lag < 0 then lg.setColor(255,0,0,255) end
-	lg.printf(lagPercentage, 0, fontHeight, width, 'right')
-	lg.setColor(255,255,255,255)
-
-	lg.printf(drawCalls,      0, fontHeight-24, width-fontCountWidth-canvasCountWidth-imageCountWidth-textureMemoryWidth-canvasSwitchesWidth, 'right')
-	lg.printf(canvasSwitches, 0, fontHeight-24, width-fontCountWidth-canvasCountWidth-imageCountWidth-textureMemoryWidth                    , 'right')
-	lg.printf(textureMemory,  0, fontHeight-24, width-fontCountWidth-canvasCountWidth-imageCountWidth                                       , 'right')
-	lg.printf(imageCount,     0, fontHeight-24, width-fontCountWidth-canvasCountWidth                                                       , 'right')
-	lg.printf(canvasCount,    0, fontHeight-24, width-fontCountWidth                                                                        , 'right')
-	lg.printf(fontCount,      0, fontHeight-24, width                                                                                       , 'right')
+	for i=1, #variableOrder do
+		renderVariable(variableOrder[i], 0, (i-1)*(font:getHeight()+offset*2), interpolation)
+	end
 
 	lg.pop()
 
@@ -97,8 +61,50 @@ end
 
 t.init = function()
 
-	font = love.graphics.newFont('assets/THSpatial.ttf',24)
+	font = love.graphics.newFont('assets/THSpatial.ttf',20)
 
+	t.watchVariable("Atoms per second", function()
+		return 1/love.timer.getDelta()
+	end, "%3.2f a/s")
+	t.watchVariable("Ticks per second", function()
+		return 1/love.timer.getTPS()
+	end, "%3.2f t/s")
+	t.watchVariable("Frames per second", function()
+		return 1/love.timer.getFPS()
+	end, "%3.2f f/s")
+	t.watchVariable("Lag percentage", function(interpolation)
+		-- Amount of desync between update ticks and draw frames.
+		return 1 - interpolation * 100
+	end, "%3.2f dt/t")
+
+	t.watchVariable("Draw calls", function()
+		return love.graphics.getStats().drawcalls
+	end, "d(): %4d")
+	t.watchVariable("Canvas switches", function()
+		return love.graphics.getStats().canvasswitches
+	end, "c<>: %4d")
+	t.watchVariable("Texture Memory", function()
+		stats = love.graphics.getStats()
+		return (stats.texturememory/1000)
+	end, "tex: %10f kB")
+	t.watchVariable("Image Count", function()
+		return love.graphics.getStats().images
+	end, "img: %4d")
+	t.watchVariable("Canvas Count", function()
+		return love.graphics.getStats().canvases
+	end, "cnv: %4d")
+	t.watchVariable("Fonts Count", function()
+		return love.graphics.getStats().fonts
+	end, "fnt: %4d")
+end
+
+t.watchVariable = function(name, valueCallback, formatString)
+	watchedVariables[name] = {valueCallback, formatString}
+	table.insert(variableOrder, name)
+end
+
+t.unWatchVariable = function(name)
+	table.remove(variableOrder, name)
 end
 
 ----------
