@@ -14,7 +14,7 @@ local lg = love.graphics
 
 local font
 
-local magnitudeCorrect = function(amount)
+local correctMagnitude = function(amount)
 	if     amount <       1024 then return amount             , 'B'
 	elseif amount <    1048576 then return amount /       1024, 'kB'
 	elseif amount < 1073741824 then return amount /    1048576, 'MB'
@@ -34,7 +34,7 @@ t.render = function(interpolation)
 	stats = love.graphics.getStats()
 
 	-- Correct for magnitude (original lowercase style kept for consistency in this table)
-	stats.texturememory, stats.texturememoryprefix = magnitudeCorrect(stats.texturememory)
+	stats.texturememory, stats.texturememoryprefix = correctMagnitude(stats.texturememory)
 
 	-- For positioning the data onto the screen.
 	local width, height = lg.getDimensions()
@@ -58,7 +58,7 @@ t.render = function(interpolation)
 	local ticksPerSecondWidth  = font:getWidth("00.00 tps___")
 	local framesPerSecond      = string.format("%3.2f f/s",   love.timer.getFPS())
 	local framesPerSecondWidth = font:getWidth("00.00 fps___")
-	local lagPercent           = string.format("%3.0f%% dt/t", lag)
+	local lagPercentage           = string.format("%3.0f%% dt/t", lag)
 
 	local drawCalls            = string.format("d(): %4d", stats.drawcalls)
 	local drawCallsWidth       = font:getWidth("d(): 0000")
@@ -79,7 +79,7 @@ t.render = function(interpolation)
 	lg.printf(framesPerSecond, 0, fontHeight, width-framesPerSecondWidth,                                         'right')
 
 	if lag < 0 then lg.setColor(255,0,0,255) end
-	lg.printf(lagPercent, 0, fontHeight, width, 'right')
+	lg.printf(lagPercentage, 0, fontHeight, width, 'right')
 	lg.setColor(255,255,255,255)
 
 	lg.printf(drawCalls,      0, fontHeight-24, width-fontCountWidth-canvasCountWidth-imageCountWidth-textureMemoryWidth-canvasSwitchesWidth, 'right')
