@@ -17,6 +17,14 @@ local offset = 4
 local watchedVariables = {}
 local variableOrder = {}
 
+local correctMagnitude = function(amount)
+	if     amount <       1024 then return amount             , 'B'
+	elseif amount <    1048576 then return amount /       1024, 'kB'
+	elseif amount < 1073741824 then return amount /    1048576, 'MB'
+	else                            return amount / 1073741824, 'GB'
+	end
+end
+
 local renderVariable = function(name, x, y, interpolation)
 	local value = watchedVariables[name][1](interpolation)
 	local format = watchedVariables[name][2]
@@ -85,8 +93,9 @@ t.init = function()
 	end, "c<>: %4d")
 	t.watchVariable("Texture Memory", function()
 		stats = love.graphics.getStats()
-		return (stats.texturememory/1000)
-	end, "tex: %10f kB")
+		stats.texturememory, stats.texturememorypostfix = correctMagnitude(stats.texturememory)
+		return string.format("%6.4f %s", stats.texturememory, stats.texturememorypostfix)
+	end, "tex: %s")
 	t.watchVariable("Image Count", function()
 		return love.graphics.getStats().images
 	end, "img: %4d")
@@ -103,7 +112,7 @@ t.watchVariable = function(name, valueCallback, formatString)
 	table.insert(variableOrder, name)
 end
 
-t.unWatchVariable = function(name)
+t.unwatchVariable = function(name)
 	table.remove(variableOrder, name)
 end
 
